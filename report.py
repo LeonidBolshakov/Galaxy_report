@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import typing
 
 from PyQt6 import uic
 from PyQt6.QtWidgets import QMainWindow, QLineEdit, QApplication
@@ -8,6 +9,11 @@ from PyQt6 import QtCore
 import functions as f
 from constants import Const as C
 from validatedlineedit import ValidatedLineEdit
+
+
+class OutputAN(typing.NamedTuple):
+    amount: str  # Сумма
+    NDS_including: bool  # Признак. НДС включен в сумму.
 
 
 class Report(QMainWindow):
@@ -26,42 +32,49 @@ class Report(QMainWindow):
     def __init__(self) -> None:
         """Инициализация UI, атрибутов и подключение сигналов."""
         super().__init__()
-        self.init_UI()  # Инициализация атрибутов UI
+        self.init_UI()  # Инициализация UI, подготовленного Qt Designer, в том числе установка атрибутов полей
 
         # Атрибуты хранят финансовые данные
         self.clients = 0.0  # Заплачено клиентами
-        self.corp = 0.0  # Подлежит перечислению в корпорацию
+        self.corp = 0.0  # Подлежит перечислению в корпорацию без НДС
         self.total_corp = 0.0  # В корпорацию, включая НДС
-        self.NDS_corp = 0.0  # В том числе НДС в корпорацию
-        self.left = 0.0  # Осталось заплатить
-        self.NDS_left = 0.0  # Осталось заплатить НДС
-        self.over = 0.0  # Переплачено
-        self.NDS_over = 0.0  # Переплачено
-        self.paid = 0.0  # Заплачено
-        self.paid_1 = 0.0  # Первый платёж
-        self.paid_2 = 0.0  # Второй платёж
-        self.paid_3 = 0.0  # Третий платёж
-        self.NDS_paid = 0.0  # НДС заплачено
-        self.percent_factor_NDS = (
-            C.PERCENT_NDS / 100
-        )  # Процент НДС, переведённый в коэффициент (поделённый на 100)
-        self.fields_output = (
-            self.rEditClients,
-            self.rEditCorpNDS,
-            self.rEditCorp,
-            self.rEditLeft,
-            self.rEditOver,
-            self.rEditPaid,
-        )
+        self.left = 0.0  # Осталось заплатить, включая НДС
+        self.over = 0.0  # Переплачено, включая НДС
+        self.paid = 0.0  # Заплачено, включая НДС
+        self.paid_1 = 0.0  # Первый платёж, включая НДС
+        self.paid_2 = 0.0  # Второй платёж, включая НДС
+        self.paid_3 = 0.0  # Третий платёж, включая НДС
+        self.percent_NDS = (
+            C.PERCENT_NDS
+        )  # Процент НДС корпорации. C.PERCENT_NDS - значение по умолчанию.
+        self.input_line_edits = {
+            self.EditClients: "clients",  # Поле ввода. "Клиенты" - Общая сумма, заплаченная клиентами (без НДС).
+            self.EditPaid_1: "paid_1",  # Поле ввода. "Оплачено" - Сумма первого платежа в корпорацию.
+            self.EditPaid_2: "paid_2",  # Поле ввода. "Оплачено" - Сумма второго платежа в корпорацию.
+            self.EditPaid_3: "paid_3",  # Поле ввода. "Оплачено" - Сумма третьего платежа в корпорацию.
+            self.EditPercent_NDS: "percent_NDS",  # Процент НДС, применяемый корпорацией.
+        }  # Виджеты для ввода информации
+        self.output_line_edit = {
+            # Класс OutputAN - имеет 2 параметра: имя атрибута класса и признак, что НДС входит в сумму.
+            # Поступило от клиентов без НДС.
+            self.rEditClients: OutputAN("clients", False),
+            # Надо перечислить в корпорацию без НДС.
+            self.rEditCorp: OutputAN("corp", False),
+            # Надо перечислить в корпорацию с НДС.
+            self.rEditCorpNDS: OutputAN("total_corp", True),
+            self.rEditPaid: OutputAN("paid", True),  # Всего заплачено с НДС.
+            self.rEditLeft: OutputAN("left", True),  # Осталось заплатить с НДС.
+            self.rEditOver: OutputAN("over", True),  # Переплачено с НДС.
+        }  # Виджеты для вывода информации
 
         self.setup_connections()  # Установка соединений сигналов и слотов
-        self.set_event_filters()  # Установка фильтров событий (кликанье мышкой) для полей ввода
-        self.set_custom_interface()  # установка внешнего вида интерфейса
+        self.set_event_filters()  # Установка фильтров событий для полей вывода
+        self.set_custom_interface()  # Настройка внешнего вида интерфейса
 
     def init_UI(self):
-        """Загрузка UI и переменных в объект класса"""
+        """Загрузка UI и атрибутов полей в объект класса"""
 
-        exe_directory = (  # Директория, из которой был запущен файл
+        exe_directory = (  # Директория, из которой была запущена программа
             Path(sys.argv[0]).parent
             if hasattr(sys, "frozen")  # exe файл, получен с помощью PyInstaller
             else Path(__file__).parent  # Если файл запущен как обычный Python-скрипт
@@ -71,72 +84,43 @@ class Report(QMainWindow):
         uic.loadUi(ui_config_abs_path, self)
 
     def setup_connections(self):
-        """Подключает сигналы редактирования полей к обработчикам."""
-        self.EditClients.editingFinished.connect(self.on_editing_finished_clients)
-        self.EditPaid_1.editingFinished.connect(self.on_editing_finished_paid_1)
-        self.EditPaid_2.editingFinished.connect(self.on_editing_finished_paid_2)
-        self.EditPaid_3.editingFinished.connect(self.on_editing_finished_paid_3)
-        self.EditPercent_NDS.editingFinished.connect(self.on_editing_finished_percent)
-        # Всегда устанавливаем курсор в начало поля вывода
+        """Для всех полей ввода назначает программу обработки сигнала завершения ввода"""
+        for line_edit in self.input_line_edits.keys():
+            line_edit.signal_focus_out.connect(self.handler_signal_focus_out)
 
     def set_event_filters(self):
-        """Инициирует обработку кликов по полям вывода для копирования в буфер обмена."""
-        for field in self.fields_output:
-            field.installEventFilter(self)
+        """Для всех полей вывода инициирует обработку кликов по полям."""
+        for line_edit in self.output_line_edit.keys():
+            line_edit.installEventFilter(self)
 
     def eventFilter(self, source, event):
-        """Проверяет, был ли клик мыши. Если был, копирует текст поля в буфер обмена"""
+        """Переопределение метода обработки событий фильтра.
+        Обрабатывает только клики мыши. Если клик был - копирует текст поля в буфер обмена
+        """
         if event.type() == QtCore.QEvent.Type.MouseButtonPress:
             f.put_clipboard(source)
         return super().eventFilter(source, event)
 
     def set_custom_interface(self):
         """Персонализирует интерфейс"""
-        self.set_style_input()
-        self.EditPercent_NDS.setText(f"{C.PERCENT_NDS}")
-
-    def on_editing_finished_clients(self):
-        self.clients = f.handle_input(self.EditClients)
-        self.compute_and_display()
-
-    def on_editing_finished_paid_1(self):
-        self.paid_1 = f.handle_input(self.EditPaid_1)
-        self.compute_and_display()
-
-    def on_editing_finished_paid_2(self):
-        self.paid_2 = f.handle_input(self.EditPaid_2)
-        self.compute_and_display()
-
-    def on_editing_finished_paid_3(self):
-        self.paid_3 = f.handle_input(self.EditPaid_3)
-        self.compute_and_display()
-
-    def on_editing_finished_percent(self):
-        self.percent_factor_NDS = f.handle_input(self.EditPercent_NDS) / 100
-        self.compute_and_display()
+        self.set_style_input()  # Устанавливает стиль для всех полей ввода информации
+        self.EditPercent_NDS.setText(f"{self.percent_NDS}")
 
     def set_style_input(self) -> None:
         """
-        Устанавливает стили для полей ввода информации
+        Устанавливает стиль для всех полей ввода информации
         Returns: None
         """
 
-        input_line_edits = (
-            self.EditClients,
-            self.EditPaid_1,
-            self.EditPaid_2,
-            self.EditPaid_3,
-            self.EditPercent_NDS,
-        )
-        for line_edit in input_line_edits:
+        for line_edit in self.input_line_edits:
             f.set_style_input(line_edit)
 
     def compute_and_display(self):
         """
-        Выполняет вычисления и обновляет отображение значений в интерфейсе.
+        Выполняет вычисления финансовой информации и обновляет отображение значений в интерфейсе.
 
-        Вызывает функции compute для расчётов, analysis_compute для анализа результатов и display для
-        обновления интерфейса пользователя.
+        Вызывает функции compute для расчётов, analysis_compute для анализа результатов и
+        display для обновления интерфейса пользователя.
         """
         self.compute()
         self.analysis_compute()
@@ -145,47 +129,49 @@ class Report(QMainWindow):
     def compute(self):
         """
         Вычисляет основные финансовые показатели на основе введенных данных:
-        - Общая сумма платежей.
-        - НДС платежей.
         - Сумма для корпорации без НДС.
-        - НДС от суммы для корпорации.
         - Сумма с НДС для корпорации.
+        - Общая сумма платежей.
         - Остаток платежей.
-        - НДС на остаток.
         """
-        self.paid = round(self.paid_1 + self.paid_2 + self.paid_3, 2)
-        self.NDS_paid = round(f.extract_NDS(self.paid, self.percent_factor_NDS), 2)
         self.corp = round(self.clients * C.PERCENT_CORP / 100, 2)
-        self.NDS_corp = round(self.corp * self.percent_factor_NDS, 2)
-        self.total_corp = round(self.corp + self.NDS_corp, 2)
+        # noinspection PyPep8Naming
+        NDS_corp = self.corp * self.percent_NDS / 100
+        self.total_corp = round(self.corp + NDS_corp, 2)
+        self.paid = round(self.paid_1 + self.paid_2 + self.paid_3, 2)
         self.left = round(self.total_corp - self.paid, 2)
-        self.NDS_left = round(f.extract_NDS(self.left, self.percent_factor_NDS), 2)
 
     def analysis_compute(self):
         """
         Анализирует остаток долга после платежей.
-
-        Если остаток отрицательный, устанавливает переплату и обнуляет остаток и соответствующие НДС.
+        Если остаток отрицательный, устанавливает переплату.
         """
         if self.left < 0:
             self.over = -self.left
-            self.NDS_over = -self.NDS_left
             self.left = 0.0
-            self.NDS_left = 0.0
         else:
             self.over = 0.0
-            self.NDS_over = 0.0
 
     def display(self):
         """
-        Обновляет отображение всех соответствующих полей в интерфейсе с учетом вычисленных значений.
+        Обновляет отображение всех выходных полей в интерфейсе.
         """
-        f.display_amount(self.rEditClients, self.clients)
-        f.display_amount(self.rEditCorp, self.corp)
-        f.display_amount(self.rEditCorpNDS, self.total_corp, self.NDS_corp)
-        f.display_amount(self.rEditPaid, self.paid, self.NDS_paid)
-        f.display_amount(self.rEditLeft, self.left, self.NDS_left)
-        f.display_amount(self.rEditOver, self.over, self.NDS_over)
+        for field in self.output_line_edit:
+            f.display_amount(
+                field,  # Поле вывода финансового показателя
+                # Значение финансового показателя
+                getattr(self, self.output_line_edit[field].amount),
+                # Признак. В сумму финансового показателя входит НДС.
+                self.output_line_edit[field].NDS_including,
+                self.percent_NDS,  # Процент НДС
+            )
+
+    def handler_signal_focus_out(self, obj):
+        """Обработчик сигнала выхода из фокуса поля ввода (при валидном значении)"""
+        input_amount = f.parse_rubles(obj.text())
+        setattr(self, self.input_line_edits[obj], input_amount)
+        f.put_line_input(obj, input_amount)
+        self.compute_and_display()
 
 
 # Запуск приложения

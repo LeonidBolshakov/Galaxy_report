@@ -22,33 +22,28 @@ def filter_rubles(input_str: str) -> str:
     return input_str
 
 
-def handle_input(line_edit: QLineEdit) -> float:
+def put_line_input(line_edit: QLineEdit, rubles: float) -> None:
     """
-    Обрабатывает ввод: преобразует его в число с двумя десятичными знаками,
-    делает шрифт жирным.
-    Устанавливает текст в поле ввода.
-
+    Выводит в виджет жирным шрифтом отформатированную сумму
     Args:
-        line_edit (QLineEdit): Поле ввода, содержащее строку для обработки.
+        line_edit (QLineEdit): Виджет ввода суммы
+        rubles (float): сумма
 
-    Returns:
-        float: Очищенная и преобразованная сумма в рублях.
+    Returns: None
     """
-    rubles = parse_rubles(line_edit.text())
     line_edit.setText(f"{rubles:.2f}")
     set_bold_font(line_edit)
-    return rubles
 
 
 def parse_rubles(rubles_str: str) -> float:
     """
-    Преобразует строковое представление суммы в рублях в число с двумя десятичными знаками.
+    Преобразует сумму в рублях (str) в вещественное число.
 
     Args:
-        rubles_str (str): Строка, содержащая сумму в рублях.
+        rubles_str (str): Строка, содержащая сумму в рублях. В строке возможны "лишние" символы: пробелы и апострофы
 
     Returns:
-        float: Сумма в рублях как число float с двумя десятичными знаками.
+        float: Сумма в рублях (float), округлённая до 2 десятичных знаков.
                Возвращает -999999999.99, если ввод некорректен.
     """
     # Очищаем строку от нежелательных символов
@@ -71,29 +66,28 @@ def amount_to_words(amount: float) -> str:
     Returns:
         str: Строковое представление суммы с рублями и копейками.
     """
-    # Округляем сумму до копеек
-    amount = round(amount, 2)
+
     # Получаем целую часть суммы (рубли)
     rubles = int(amount)
     # Получаем дробную часть суммы (копейки), округляя до ближайшего целого
     kopecks = round((amount - rubles) * 100)
 
-    # Преобразуем целую часть в слова и делаем первую букву заглавной
-    rubles_word = num2words(rubles, lang="ru").capitalize()
+    # Преобразуем рубли в слова и делаем первую букву заглавной
+    rubles_word = num2words(rubles, lang=C.LANG).capitalize()
 
     # Определяем одну и две последние цифры рублей для правильного склонения
     last_digit = rubles % 10
     last_two_digits = rubles % 100
 
-    # Базовое слово "рублей"
-    ruble_declension = C.FORMS_RUBLE[0]
+    # Базовое слово - "рублей"
+    ruble_declension = C.FORMS_RUBLE.genitive_plural
 
     # Проверка на исключения для правильного склонения
     if not (11 <= last_two_digits <= 14):
         if last_digit == 1:
-            ruble_declension = C.FORMS_RUBLE[1]
+            ruble_declension = C.FORMS_RUBLE.nominative
         elif 2 <= last_digit <= 4:
-            ruble_declension = C.FORMS_RUBLE[2]
+            ruble_declension = C.FORMS_RUBLE.genitive
 
     # Формируем итоговую строку, добавляя ведущие нули к копейкам при необходимости
     return f"{rubles_word} {ruble_declension} {kopecks:02} {C.TEXT_KOP}."
@@ -112,38 +106,67 @@ def show_amount(amount: float) -> str:
     return f"{amount:.2f} {C.TEXT_RUB}. ({amount_to_words(amount)})"
 
 
+def amount_format(amount: float) -> str:
+    return f"{amount:.2f}"
+
+
 # noinspection PyPep8Naming
-def extract_NDS(amount: float, percent_factor_NDS: float) -> float:
+def extract_NDS(amount: float, percent_NDS: float) -> float:
     """
-    Вычленяет сумму НДС для указанной суммы.
+    Вычленяет НДС из суммы.
 
     Формула: НДС = сумма * процент / (100 + процент)
 
     Args:
         amount (float): Исходная сумма.
-        percent_factor_NDS (float): процент НДС / 100
+        percent_NDS (float): процент НДС
 
     Returns:
         float: Вычлененная сумма НДС.
     """
-    return amount * percent_factor_NDS / (1 + percent_factor_NDS)
+    return amount * percent_NDS / (100 + percent_NDS)
 
 
 # noinspection PyPep8Naming
-def display_amount(r_edit_line: QLineEdit, amount: float, NDS: float = 0.0):
+def display_amount(
+        r_edit_line: QLineEdit, amount: float, NDS_including: bool, percent_NDS: float
+):
     """
-    Устанавливает текст в r_edit_line с форматированным отображением суммы и НДС.
-    Устанавливает курсор в начало текста
+    Устанавливает текст в r_edit_line, устанавливает позицию курсора для более читабельного отображения информации.
 
     Args:
-        r_edit_line (QLineEdit): Поле для отображения суммы.
+        r_edit_line (QLineEdit): Поле для отображения суммы
         amount (float): Сумма денег.
-        NDS (float, optional): Сумма НДС. По умолчанию 0.0.
+        NDS_including (bool): Признак того, что в сумму входит НДС
+        percent_NDS (float) : процент НДС
     """
-    r_edit_line.setText(
-        f"{show_amount(amount)}"
-        + (f", {C.TEXT_INCLUDING_NDS} {show_amount(NDS)}" if NDS != 0.0 else "")
+
+    r_edit_line.setText(format_summa_and_NDS(amount, NDS_including, percent_NDS))
+    cursor_to_beginning(r_edit_line)
+
+
+# noinspection PyPep8Naming
+def format_summa_and_NDS(amount: float, NDS_including: bool, percent_NDS: float) -> str:
+    """
+    Форматирует текст суммы и НДС.
+
+    Args:
+        amount (float): Сумма денег.
+        NDS_including (bool): Признак того, что в сумму входит НДС
+        percent_NDS (float) : процент НДС
+
+    Returns:
+        Отформатированный текст
+    """
+    return f"{show_amount(amount)}" + (
+        f", {C.TEXT_INCLUDING_NDS} {show_amount(extract_NDS(amount, percent_NDS))}"
+        if NDS_including
+        else ""
     )
+
+
+def cursor_to_beginning(r_edit_line: QLineEdit):
+    """Устанавливает курсор в начало поля - для того, что бы текст в любом случае отображается с начала"""
     r_edit_line.setCursorPosition(0)
 
 
@@ -168,8 +191,8 @@ def put_clipboard(widget: QLineEdit):
 
 def show_message(text: str, wait: int) -> None:
     """
-    Отображает всплывающее сообщение о том, что текст скопирован в буфер обмена.
-    Сообщение автоматически закрывается через заданное время.
+    Отображает всплывающее сообщение.
+    Сообщение автоматически закрывается через заданное в параметре время.
     Параметры:
     text - текст выводимого сообщения
     wait - максимальное время нахождения сообщения на экране в мс
@@ -183,13 +206,13 @@ def show_message(text: str, wait: int) -> None:
     def close_app():
         msg_box.close()
 
-    # Устанавливаем таймер на определённое время для закрытия окна
+    # Для закрытия окна устанавливаем таймер
     QTimer.singleShot(wait, close_app)
 
 
 def set_style_input(line_edit: QLineEdit):
     """
-    Устанавливает стилизацию для QLineEdit через setStyleSheet.
+    Устанавливает стиль для поля ввода.
 
     Args:
         line_edit (QLineEdit): Поле, которое будет стилизовано.
