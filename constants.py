@@ -40,3 +40,8 @@ class Const(frozenset):
     TEXT_INCLUDING_NDS = "включая НДС"
     TEXT_WRITTEN_IN_CLIPBOARD = "Текст скопирован в буфер обмена"
     TEXT_NO_WRITTEN_IN_CLIPBOARD = "Текст НЕ СКОПИРОВАН в буфер обмена"
+    TEXT_ERROR_PRG = (
+        f"Ошибка в программе. Модуль {__file__}.\n"
+        + "Функция 'parse_rubles'.\nОтладочная информация:\n"
+        + "Данные прошли валидацию, но не преобразуются во float\n"
+    )

@@ -31,11 +31,11 @@ def put_line_input(line_edit: QLineEdit, rubles: float) -> None:
 
     Returns: None
     """
-    line_edit.setText(f"{rubles:.2f}")
+    line_edit.setText(amount_format(rubles))
     set_bold_font(line_edit)
 
 
-def parse_rubles(rubles_str: str) -> float:
+def parse_rubles(rubles_str: str) -> float | None:
     """
     Преобразует сумму в рублях (str) в вещественное число.
 
@@ -44,21 +44,26 @@ def parse_rubles(rubles_str: str) -> float:
 
     Returns:
         float: Сумма в рублях (float), округлённая до 2 десятичных знаков.
-               Возвращает -999999999.99, если ввод некорректен.
+               Возвращает None, если ввод некорректен.
     """
     # Очищаем строку от нежелательных символов
     cleaned_str = filter_rubles(rubles_str)
 
     try:
         # Преобразуем очищенную строку в число с плавающей точкой, округляем до двух десятичных знаков
-        return round(float(cleaned_str), 2)
+        return round(float(cleaned_str), 2) if cleaned_str else 0.00
     except ValueError:
-        return -999999999.99
+        msg_box_text = C.TEXT_ERROR_PRG
+        msg_box_text += f"{rubles_str=} {cleaned_str=}"
+        msg_box = QMessageBox()
+        msg_box.setText(msg_box_text)
+        msg_box.exec()
+        return None
 
 
 def amount_to_words(amount: float) -> str:
     """
-    Преобразует числовую сумму в строковое представление на русском языке с правильным склонением "рубль".
+    Преобразует сумму в текстовое представление на русском языке с правильным склонением слова "рубль".
 
     Args:
         amount (float): Сумма денег, которую нужно преобразовать в слова.
@@ -76,8 +81,9 @@ def amount_to_words(amount: float) -> str:
     rubles_word = num2words(rubles, lang=C.LANG).capitalize()
 
     # Определяем одну и две последние цифры рублей для правильного склонения
-    last_digit = rubles % 10
-    last_two_digits = rubles % 100
+    rubles_positif = abs(rubles)
+    last_digit = rubles_positif % 10
+    last_two_digits = rubles_positif % 100
 
     # Базовое слово - "рублей"
     ruble_declension = C.FORMS_RUBLE.genitive_plural
@@ -103,7 +109,7 @@ def show_amount(amount: float) -> str:
     Returns:
         str: Строковое представление суммы в цифрах и в рублях и копейках.
     """
-    return f"{amount:.2f} {C.TEXT_RUB}. ({amount_to_words(amount)})"
+    return f"{amount_format(amount)} {C.TEXT_RUB}. ({amount_to_words(amount)})"
 
 
 def amount_format(amount: float) -> str:
@@ -129,8 +135,8 @@ def extract_NDS(amount: float, percent_NDS: float) -> float:
 
 # noinspection PyPep8Naming
 def display_amount(
-        r_edit_line: QLineEdit, amount: float, NDS_including: bool, percent_NDS: float
-):
+    r_edit_line: QLineEdit, amount: float, NDS_including: bool, percent_NDS: float
+) -> None:
     """
     Устанавливает текст в r_edit_line, устанавливает позицию курсора для более читабельного отображения информации.
 
@@ -165,12 +171,12 @@ def format_summa_and_NDS(amount: float, NDS_including: bool, percent_NDS: float)
     )
 
 
-def cursor_to_beginning(r_edit_line: QLineEdit):
+def cursor_to_beginning(r_edit_line: QLineEdit) -> None:
     """Устанавливает курсор в начало поля - для того, что бы текст в любом случае отображается с начала"""
     r_edit_line.setCursorPosition(0)
 
 
-def put_clipboard(widget: QLineEdit):
+def put_clipboard(widget: QLineEdit) -> None:
     """
     Копирует текст из widget в буфер обмена и отображает сообщение о копировании.
 
@@ -203,14 +209,14 @@ def show_message(text: str, wait: int) -> None:
     msg_box.show()
 
     # Создаём функцию для закрытия окна
-    def close_app():
-        msg_box.close()
+    def close_app() -> None:
+        msg_box.deleteLater()
 
     # Для закрытия окна устанавливаем таймер
     QTimer.singleShot(wait, close_app)
 
 
-def set_style_input(line_edit: QLineEdit):
+def set_style_input(line_edit: QLineEdit) -> None:
     """
     Устанавливает стиль для поля ввода.
 
@@ -220,7 +226,7 @@ def set_style_input(line_edit: QLineEdit):
     line_edit.setStyleSheet(C.STYLE_INPUT)
 
 
-def set_bold_font(line_edit: QLineEdit):
+def set_bold_font(line_edit: QLineEdit) -> None:
     """
     Делает шрифт в QLineEdit жирным.
 
