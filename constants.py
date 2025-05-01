@@ -11,7 +11,7 @@ class Const(frozenset):
     # Класс-контейнер для констант. Наследуется от frozenset для неизменяемости.
     NAME_UI = "_internal\\report.ui"  # Путь к файлу UI, сформированному Qt Designer
     PERCENT_CORP = 50.0  # Процент отчислений корпорации
-    PERCENT_NDS = 5.0  # Процент НДС, заданный по умолчанию.
+    PERCENT_NDS = 20.0  # Процент НДС, заданный по умолчанию.
     TIME_TO_SHOW_SUCCESS_MS = 1000  # Время показа успешного уведомления (мс)
     TIME_TO_SHOW_FAILURE_MS = 5000  # Время показа уведомления об ошибке (мс)
     STYLE_INPUT = """
