@@ -25,10 +25,9 @@ class ValidatedLineEdit(QLineEdit):
         if self.hasAcceptableInput():
             # Устанавливает стиль поля ввода при валидном значении и инициирует сигнал
             self.setStyleSheet("")
-            super().focusOutEvent(event)
-            # noinspection PyUnresolvedReferences
-            self.signal_focus_out.emit(self)
         else:
             # Устанавливает стиль поля ввода при невалидном значении.
             self.setStyleSheet(C.STYLE_ERROR)
-            super().focusOutEvent(event)
+        super().focusOutEvent(event)
+        # noinspection PyUnresolvedReferences
+        self.signal_focus_out.emit(self)

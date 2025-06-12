@@ -177,12 +177,9 @@ class Report(QMainWindow):
     def handler_signal_focus_out(self, obj: ValidatedLineEdit) -> None:
         """Обработчик сигнала выхода из фокуса поля ввода"""
         input_amount = f.parse_rubles(obj.text())
-        if input_amount:
-            setattr(self, self.input_line_edits[obj], input_amount)
-            f.put_line_input(obj, input_amount)
-            self.compute_and_display()
-        else:
-            obj.setStyleSheet(C.STYLE_ERROR)
+        setattr(self, self.input_line_edits[obj], input_amount)
+        f.put_line_input(obj, input_amount)
+        self.compute_and_display()
 
 
 # Запуск приложения
