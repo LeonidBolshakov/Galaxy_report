@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 from functions import (
     filter_rubles,
     parse_rubles,
-    amount_to_words,
+    summa_to_words,
     extract_NDS,
     show_amount,
 )
@@ -46,21 +46,21 @@ class TestFunctions(unittest.TestCase):
     def test_amount_to_words(self):
         # Стандартные суммы
         self.assertEqual(
-            amount_to_words(1234.56), "Одна тысяча двести тридцать четыре рубля 56 коп."
+            summa_to_words(1234.56), "Одна тысяча двести тридцать четыре рубля 56 коп."
         )
-        self.assertEqual(amount_to_words(1.01), "Один рубль 01 коп.")
-        self.assertEqual(amount_to_words(2.02), "Два рубля 02 коп.")
-        self.assertEqual(amount_to_words(5.05), "Пять рублей 05 коп.")
-        self.assertEqual(amount_to_words(21.21), "Двадцать один рубль 21 коп.")
-        self.assertEqual(amount_to_words(11.11), "Одиннадцать рублей 11 коп.")
-        self.assertEqual(amount_to_words(14.14), "Четырнадцать рублей 14 коп.")
-        self.assertEqual(amount_to_words(0.99), "Ноль рублей 99 коп.")
+        self.assertEqual(summa_to_words(1.01), "Один рубль 01 коп.")
+        self.assertEqual(summa_to_words(2.02), "Два рубля 02 коп.")
+        self.assertEqual(summa_to_words(5.05), "Пять рублей 05 коп.")
+        self.assertEqual(summa_to_words(21.21), "Двадцать один рубль 21 коп.")
+        self.assertEqual(summa_to_words(11.11), "Одиннадцать рублей 11 коп.")
+        self.assertEqual(summa_to_words(14.14), "Четырнадцать рублей 14 коп.")
+        self.assertEqual(summa_to_words(0.99), "Ноль рублей 99 коп.")
 
         # Граничные значения
-        self.assertEqual(amount_to_words(0.0), "Ноль рублей 00 коп.")
-        self.assertEqual(amount_to_words(1000000.00), "Один миллион рублей 00 коп.")
+        self.assertEqual(summa_to_words(0.0), "Ноль рублей 00 коп.")
+        self.assertEqual(summa_to_words(1000000.00), "Один миллион рублей 00 коп.")
         self.assertEqual(
-            amount_to_words(-1234567.127),
+            summa_to_words(-1234567.127),
             "Минус один миллион двести тридцать четыре тысячи пятьсот шестьдесят семь рублей -13 коп.",
         )
 
@@ -93,7 +93,7 @@ class TestFunctions(unittest.TestCase):
     def test_amount_to_words_negative(self):
         # Отрицательные суммы
         self.assertEqual(
-            amount_to_words(-1234.56),
+            summa_to_words(-1234.56),
             "Минус одна тысяча двести тридцать четыре рубля -56 коп.",
         )
 

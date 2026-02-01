@@ -31,7 +31,7 @@ def put_line_input(line_edit: QLineEdit, rubles: float) -> None:
 
     Returns: None
     """
-    line_edit.setText(amount_format(rubles))
+    line_edit.setText(summa_format(rubles))
     set_bold_font(line_edit)
 
 
@@ -61,21 +61,21 @@ def parse_rubles(rubles_str: str) -> float | None:
         return None
 
 
-def amount_to_words(amount: float) -> str:
+def summa_to_words(summa: float) -> str:
     """
     Преобразует сумму в текстовое представление на русском языке с правильным склонением слова "рубль".
 
     Args:
-        amount (float): Сумма денег, которую нужно преобразовать в слова.
+        summa (float): Сумма денег, которую нужно преобразовать в слова.
 
     Returns:
         str: Строковое представление суммы с рублями и копейками.
     """
 
     # Получаем целую часть суммы (рубли)
-    rubles = int(amount)
+    rubles = int(summa)
     # Получаем дробную часть суммы (копейки), округляя до ближайшего целого
-    kopecks = round((amount - rubles) * 100)
+    kopecks = round((summa - rubles) * 100)
 
     # Преобразуем рубли в слова и делаем первую букву заглавной
     rubles_word = num2words(rubles, lang=C.LANG).capitalize()
@@ -99,80 +99,80 @@ def amount_to_words(amount: float) -> str:
     return f"{rubles_word} {ruble_declension} {kopecks:02} {C.TEXT_KOP}."
 
 
-def show_amount(amount: float) -> str:
+def show_summa(summa: float) -> str:
     """
     Формирует строку, состоящую из цифрового и текстового представления суммы в рублях и копейках.
 
     Args:
-        amount (float): Сумма денег, которую нужно отобразить.
+        summa (float): Сумма денег, которую нужно отобразить.
 
     Returns:
         str: Строковое представление суммы в цифрах и в рублях и копейках.
     """
-    return f"{amount_format(amount)} {C.TEXT_RUB}. ({amount_to_words(amount)})"
+    return f"{summa_format(summa)} {C.TEXT_RUB}. ({summa_to_words(summa)})"
 
 
-def amount_format(amount: float) -> str:
-    return f"{amount:.2f}"
+def summa_format(summa: float) -> str:
+    return f"{summa:.2f}"
 
 
 # noinspection PyPep8Naming
-def extract_NDS(amount: float, percent_NDS: float) -> float:
+def extract_NDS(summa: float, percent_NDS: float) -> float:
     """
     Вычленяет НДС из суммы.
 
     Формула: НДС = сумма * процент / (100 + процент)
 
     Args:
-        amount (float): Исходная сумма.
+        summa (float): Исходная сумма.
         percent_NDS (float): процент НДС
 
     Returns:
         float: Вычлененная сумма НДС.
     """
-    return amount * percent_NDS / (100 + percent_NDS)
+    return summa * percent_NDS / (100 + percent_NDS)
 
 
 # noinspection PyPep8Naming
-def display_amount(
-    r_edit_line: QLineEdit, amount: float, NDS_including: bool, percent_NDS: float
+def display_summa(
+        r_edit_line: QLineEdit, summa: float, NDS_including: bool, percent_NDS: float
 ) -> None:
     """
     Устанавливает текст в r_edit_line, устанавливает позицию курсора для более читабельного отображения информации.
 
     Args:
         r_edit_line (QLineEdit): Поле для отображения суммы
-        amount (float): Сумма денег.
+        summa (float): Сумма денег.
         NDS_including (bool): Признак того, что в сумму входит НДС
         percent_NDS (float) : процент НДС
     """
 
-    r_edit_line.setText(format_summa_and_NDS(amount, NDS_including, percent_NDS))
+    r_edit_line.setText(format_summa_and_NDS(summa, NDS_including, percent_NDS))
     cursor_to_beginning(r_edit_line)
 
 
 # noinspection PyPep8Naming
-def format_summa_and_NDS(amount: float, NDS_including: bool, percent_NDS: float) -> str:
+def format_summa_and_NDS(summa: float, NDS_including: bool, percent_NDS: float) -> str:
     """
     Форматирует текст суммы и НДС.
 
     Args:
-        amount (float): Сумма денег.
+        summa (float): Сумма денег.
         NDS_including (bool): Признак того, что в сумму входит НДС
         percent_NDS (float) : процент НДС
 
     Returns:
         Отформатированный текст
     """
-    return f"{show_amount(amount)}" + (
-        f", {C.TEXT_INCLUDING_NDS} {show_amount(extract_NDS(amount, percent_NDS))}"
+    return f"{show_summa(summa)}" + (
+        f", {C.TEXT_INCLUDING_NDS} {show_summa(extract_NDS(summa, percent_NDS))}"
         if NDS_including
         else ""
     )
 
 
 def cursor_to_beginning(r_edit_line: QLineEdit) -> None:
-    """Устанавливает курсор в начало поля - для того, что бы текст в любом случае отображается с начала"""
+    """Устанавливает курсор в начало поля — для того, что бы текст в любом случае отображается с начала"""
     r_edit_line.setCursorPosition(0)
 
 
