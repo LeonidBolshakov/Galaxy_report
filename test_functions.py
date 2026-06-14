@@ -5,7 +5,7 @@ from functions import (
     parse_rubles,
     summa_to_words,
     extract_NDS,
-    show_amount,
+    show_summa,
 )
 
 
@@ -64,15 +64,15 @@ class TestFunctions(unittest.TestCase):
             "Минус один миллион двести тридцать четыре тысячи пятьсот шестьдесят семь рублей -13 коп.",
         )
 
-    def test_show_amount(self):
+    def test_show_summa(self):
         # Стандартные суммы
         self.assertEqual(
-            show_amount(1234.56),
+            show_summa(1234.56),
             "1234.56 руб. (Одна тысяча двести тридцать четыре рубля 56 коп.)",
         )
         # Пограничные случаи
-        self.assertEqual(show_amount(0.0), "0.00 руб. (Ноль рублей 00 коп.)")
-        self.assertEqual(show_amount(1.0145), "1.01 руб. (Один рубль 01 коп.)")
+        self.assertEqual(show_summa(0.0), "0.00 руб. (Ноль рублей 00 коп.)")
+        self.assertEqual(show_summa(1.0145), "1.01 руб. (Один рубль 01 коп.)")
 
     def test_parse_rubles_edge_cases(self):
         # Точки в начале и конце

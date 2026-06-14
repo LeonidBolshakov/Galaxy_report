@@ -78,12 +78,18 @@ class Report(QMainWindow):
         for line_edit in self.output_line_edit.keys():
             line_edit.installEventFilter(self)
 
-    def eventFilter(self, source: QLineEdit, event: QtCore.QEvent) -> bool:
-        """Переопределение метода обработки событий фильтра.
-        Обрабатывает только клики мыши. Если клик был — копирует текст поля в буфер обмена
-        """
-        if event.type() == QtCore.QEvent.Type.MouseButtonPress:
+    def eventFilter(
+            self,
+            source: QtCore.QObject | None,
+            event: QtCore.QEvent | None,
+    ) -> bool:
+        if (
+                isinstance(source, QLineEdit)
+                and event is not None
+                and event.type() == QtCore.QEvent.Type.MouseButtonPress
+        ):
             f.put_clipboard(source)
+
         return super().eventFilter(source, event)
 
     def set_custom_interface(self) -> None:
@@ -158,6 +164,10 @@ class Report(QMainWindow):
     def handler_signal_focus_out(self, obj: ValidatedLineEdit) -> None:
         """Обработчик сигнала выхода из фокуса поля ввода"""
         input_summa = f.parse_rubles(obj.text())
+
+        if input_summa is None:
+            return
+
         setattr(self, self.input_line_edits[obj], input_summa)
         f.put_line_input(obj, input_summa)
         self.compute_and_display()
