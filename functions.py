@@ -135,7 +135,7 @@ def extract_NDS(summa: float, percent_NDS: float) -> float:
 
 # noinspection PyPep8Naming
 def display_summa(
-        r_edit_line: QLineEdit, summa: float, NDS_including: bool, percent_NDS: float
+    r_edit_line: QLineEdit, summa: float, NDS_including: bool, percent_NDS: float
 ) -> None:
     """
     Устанавливает текст в r_edit_line, устанавливает позицию курсора для более читабельного отображения информации.

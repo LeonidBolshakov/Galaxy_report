@@ -19,8 +19,8 @@ class OutputAN(typing.NamedTuple):
 class Report(QMainWindow):
     EditClientsNDS: ValidatedLineEdit
     EditPaid_1: ValidatedLineEdit
-    EditPaid_2: ValidatedLineEdit
-    EditPaid_3: ValidatedLineEdit
+    # ttt EditPaid_2: ValidatedLineEdit
+    # ttt EditPaid_3: ValidatedLineEdit
     EditPercent_NDS: ValidatedLineEdit
     rEditClientsNDS: QLineEdit
     rEditClients: QLineEdit
@@ -79,14 +79,14 @@ class Report(QMainWindow):
             line_edit.installEventFilter(self)
 
     def eventFilter(
-            self,
-            source: QtCore.QObject | None,
-            event: QtCore.QEvent | None,
+        self,
+        source: QtCore.QObject | None,
+        event: QtCore.QEvent | None,
     ) -> bool:
         if (
-                isinstance(source, QLineEdit)
-                and event is not None
-                and event.type() == QtCore.QEvent.Type.MouseButtonPress
+            isinstance(source, QLineEdit)
+            and event is not None
+            and event.type() == QtCore.QEvent.Type.MouseButtonPress
         ):
             f.put_clipboard(source)
 
@@ -176,8 +176,8 @@ class Report(QMainWindow):
         return {  # Словарь свойств виджетов ввода
             self.EditClientsNDS: "clients_nds",  # Поле ввода. "Клиенты" - Сумма, заплаченная клиентами (без НДС).
             self.EditPaid_1: "paid_1",  # Поле ввода. "Оплачено" - Сумма первого платежа в корпорацию.
-            self.EditPaid_2: "paid_2",  # Поле ввода. "Оплачено" - Сумма второго платежа в корпорацию.
-            self.EditPaid_3: "paid_3",  # Поле ввода. "Оплачено" - Сумма третьего платежа в корпорацию.
+            # ttt self.EditPaid_2: "paid_2",  # Поле ввода. "Оплачено" - Сумма второго платежа в корпорацию.
+            # ttt self.EditPaid_3: "paid_3",  # Поле ввода. "Оплачено" - Сумма третьего платежа в корпорацию.
             self.EditPercent_NDS: "percent_NDS",  # Процент НДС, применяемый корпорацией.
         }  # Виджеты для ввода информации
 
@@ -185,7 +185,7 @@ class Report(QMainWindow):
         return {  # Словарь свойств виджетов вывода
             # Класс OutputAN - имеет 2 параметра: имя атрибута класса и признак, что НДС входит в сумму.
             # Поступило от клиентов c НДС.
-            self.rEditClientsNDS: OutputAN(summa="clients_nds", NDS_including=True),
+            # ttt self.rEditClientsNDS: OutputAN(summa="clients_nds", NDS_including=True),
             # Поступило от клиентов без НДС.
             self.rEditClients: OutputAN(summa="clients", NDS_including=False),
             # Перечислить в корпорацию без НДС.
